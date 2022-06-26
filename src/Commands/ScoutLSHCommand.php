@@ -1,12 +1,12 @@
 <?php
 
-namespace VendorName\Skeleton\Commands;
+namespace SiteOrigin\ScoutLSH\Commands;
 
 use Illuminate\Console\Command;
 
-class SkeletonCommand extends Command
+class ScoutLSHCommand extends Command
 {
-    public $signature = 'skeleton';
+    public $signature = 'laravel-scout-lsh';
 
     public $description = 'My command';
 

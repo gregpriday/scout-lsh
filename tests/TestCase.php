@@ -1,36 +1,46 @@
 <?php
 
-namespace VendorName\Skeleton\Tests;
+namespace SiteOrigin\ScoutLSH\Tests;
 
 use Illuminate\Database\Eloquent\Factories\Factory;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Scout\ScoutServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
-use VendorName\Skeleton\SkeletonServiceProvider;
+use SiteOrigin\ScoutLSH\ScoutLSHServiceProvider;
+use SiteOrigin\ScoutLSH\Tests\Providor\ScoutLSHTestServiceProvider;
 
 class TestCase extends Orchestra
 {
+    use RefreshDatabase;
+
     protected function setUp(): void
     {
         parent::setUp();
 
         Factory::guessFactoryNamesUsing(
-            fn (string $modelName) => 'VendorName\\Skeleton\\Database\\Factories\\'.class_basename($modelName).'Factory'
+            fn (string $modelName) => 'SiteOrigin\\ScoutLSH\\Database\\Factories\\'.class_basename($modelName).'Factory'
         );
     }
 
     protected function getPackageProviders($app)
     {
         return [
-            SkeletonServiceProvider::class,
+            ScoutLSHServiceProvider::class,
+            ScoutServiceProvider::class,
         ];
     }
 
     public function getEnvironmentSetUp($app)
     {
-        config()->set('database.default', 'testing');
+        config()->set('database.default', 'mysql');
 
-        /*
-        $migration = include __DIR__.'/../database/migrations/create_skeleton_table.php.stub';
-        $migration->up();
-        */
+        // We the scout engine to vector
+        config()->set('scout.driver', 'vector');
+    }
+
+    public function defineDatabaseMigrationsAfterDatabaseRefreshed()
+    {
+        $this->loadMigrationsFrom(realpath(__DIR__.'/../database/migrations/'));
+        $this->loadMigrationsFrom(realpath(__DIR__.'/migrations/'));
     }
 }

@@ -1,24 +1,26 @@
 {
-    "name": ":vendor_slug/:package_slug",
-    "description": ":package_description",
+    "name": "siteorigin/laravel-scout-lsh",
+    "description": "Hashing search for Laravel",
     "keywords": [
-        ":vendor_name",
+        "siteorigin",
         "laravel",
-        ":package_slug"
+        "laravel-scout-lsh"
     ],
-    "homepage": "https://github.com/:vendor_slug/:package_slug",
+    "homepage": "https://github.com/siteorigin/laravel-scout-lsh",
     "license": "MIT",
     "authors": [
         {
-            "name": ":author_name",
-            "email": "author@domain.com",
+            "name": "Greg Priday",
+            "email": "greg@siteorigin.com",
             "role": "Developer"
         }
     ],
     "require": {
         "php": "^8.1",
-        "spatie/laravel-package-tools": "^1.9.2",
-        "illuminate/contracts": "^9.0"
+        "guzzlehttp/guzzle": "^7.4",
+        "illuminate/contracts": "^9.0",
+        "laravel/scout": "^9.4",
+        "spatie/laravel-package-tools": "^1.9.2"
     },
     "require-dev": {
         "friendsofphp/php-cs-fixer": "^3.8",
@@ -35,13 +37,13 @@
     },
     "autoload": {
         "psr-4": {
-            "VendorName\\Skeleton\\": "src",
-            "VendorName\\Skeleton\\Database\\Factories\\": "database/factories"
+            "SiteOrigin\\ScoutLSH\\": "src",
+            "SiteOrigin\\ScoutLSH\\Database\\Factories\\": "database/factories"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "VendorName\\Skeleton\\Tests\\": "tests"
+            "SiteOrigin\\ScoutLSH\\Tests\\": "tests"
         }
     },
     "scripts": {
@@ -56,10 +58,10 @@
     "extra": {
         "laravel": {
             "providers": [
-                "VendorName\\Skeleton\\SkeletonServiceProvider"
+                "SiteOrigin\\ScoutLSH\\ScoutLSHServiceProvider"
             ],
             "aliases": {
-                "Skeleton": "VendorName\\Skeleton\\Facades\\Skeleton"
+                "ScoutLSH": "SiteOrigin\\ScoutLSH\\Facades\\ScoutLSH"
             }
         }
     },

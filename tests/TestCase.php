@@ -18,7 +18,7 @@ class TestCase extends Orchestra
         parent::setUp();
 
         Factory::guessFactoryNamesUsing(
-            fn (string $modelName) => 'SiteOrigin\\ScoutLSH\\Database\\Factories\\'.class_basename($modelName).'Factory'
+            fn (string $modelName) => 'SiteOrigin\\ScoutLSH\\Tests\\database\\factories\\'.class_basename($modelName).'Factory'
         );
     }
 
@@ -33,14 +33,12 @@ class TestCase extends Orchestra
     public function getEnvironmentSetUp($app)
     {
         config()->set('database.default', 'mysql');
-
-        // We the scout engine to vector
         config()->set('scout.driver', 'vector');
     }
 
     public function defineDatabaseMigrationsAfterDatabaseRefreshed()
     {
         $this->loadMigrationsFrom(realpath(__DIR__.'/../database/migrations/'));
-        $this->loadMigrationsFrom(realpath(__DIR__.'/migrations/'));
+        $this->loadMigrationsFrom(realpath(__DIR__.'/database/migrations/'));
     }
 }

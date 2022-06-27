@@ -6,10 +6,11 @@ use ArrayIterator;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\LazyCollection;
 use Laravel\Scout\Builder;
+use Laravel\Scout\Contracts\PaginatesEloquentModels;
 use Laravel\Scout\Engines\Engine;
 use SiteOrigin\ScoutLSH\Facades\TextEncoder;
 
-class ScoutLSH extends Engine
+class ScoutLSH extends Engine implements PaginatesEloquentModels
 {
     public function update($models)
     {
@@ -78,6 +79,12 @@ class ScoutLSH extends Engine
             ->paginate($perPage, ['*'], 'page', $page);
     }
 
+    public function simplePaginate(Builder $builder, $perPage, $page)
+    {
+        return $this->buildSearchQuery($builder)
+            ->simplePaginate($perPage, ['*'], 'page', $page);
+    }
+
     private function buildSearchQuery(Builder $builder)
     {
         $encoded = TextEncoder::encode([$builder->query])[0];
@@ -88,7 +95,7 @@ class ScoutLSH extends Engine
         $similarity = '0.5 - (' . $similarity . ') / 512';
 
         $model = $builder->model;
-        $weights = method_exists($model, 'getTypeWeights') ? $model->getTypeWeights() : [];
+        $weights = method_exists($model, 'getTypeWeights') ? $model->getTypeWeights($builder) : [];
 
         if(!empty($weights)) {
             $weighting = 'CASE `field`';
@@ -99,13 +106,26 @@ class ScoutLSH extends Engine
             $similarity .= ' * (' . $weighting . ')';
         }
 
-        $sub = DB::table('lsh-search-index')
+        $similarityQuery = DB::table('lsh-search-index')
             ->selectRaw('`model_type`, `model_id`, `field`, ' . $similarity . ' AS `similarity`')
             ->where('model_type', get_class($model));
 
+        if(!empty($weights)) {
+            $similarityQuery->whereIn('field', array_keys($weights));
+        }
+
+        if(!empty($builder->index)) {
+            $indexQuery = $builder->index;
+            if($indexQuery instanceof \Illuminate\Database\Eloquent\Builder) {
+                // If this is an Eloquent query, we need to get the underlying query builder
+                $indexQuery = $indexQuery->getQuery()->select($model->getKeyName());
+            }
+            $similarityQuery->whereIn('model_id', $indexQuery);
+        }
+
         // Select from this subquery where we group by model_id and make score the sum of all the similarities
-        $sub2 = DB::table('lsh-search-index')
-            ->fromSub($sub, 'sub')
+        $combinedQuery = DB::table('lsh-search-index')
+            ->fromSub($similarityQuery, 'sub')
             ->groupBy('model_id')
             ->selectRaw('`model_id`, SUM(`similarity`) AS `score`')
             ->orderByDesc('score');
@@ -113,7 +133,7 @@ class ScoutLSH extends Engine
         // Now, we need to create a $model query that returns models that match the search query.
         // We'll do this by joining the results table to the model table.
         return $model->query()
-            ->leftJoinSub($sub2, 'sub2', 'sub2.model_id', '=', $model->getTable() . '.id')
+            ->rightJoinSub($combinedQuery, 'combined', 'combined.model_id', '=', $model->getTable() . '.' . $model->getKeyName())
             ->orderByDesc('score');
     }
 

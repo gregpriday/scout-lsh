@@ -6,29 +6,28 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Laravel\Scout\Builder;
 use Laravel\Scout\Searchable;
-use SiteOrigin\ScoutLSH\HashSearchable;
 
-class Question extends Model
+class Listing extends Model
 {
-    use Searchable, HasFactory;
+    use Searchable;
 
-    protected $table = 'questions';
+    protected $table = 'listings';
     protected $guarded = [];
-    protected $fillable = ['question', 'answer', 'category'];
+    protected $fillable = ['title', 'description', 'area'];
 
     public function toSearchableArray(): array
     {
         return [
-            'question' => $this->question,
-            'answer' => $this->answer,
+            'title' => $this->title,
+            'description' => $this->description,
         ];
     }
 
     public function getTypeWeights(Builder $builder): array
     {
         return [
-            'question' => 1.0,
-            'answer' => 0.5,
+            'title' => 1,
+            'description' => 0.8,
         ];
     }
 }

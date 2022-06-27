@@ -8,11 +8,12 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::create('questions', function (Blueprint $table) {
+        Schema::create('listings', function (Blueprint $table) {
             $table->id();
 
-            $table->string('question');
-            $table->text('answer');
+            $table->string('title');
+            $table->text('description');
+            $table->string('area');
 
             $table->timestamps();
         });

@@ -7,7 +7,6 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Scout\ScoutServiceProvider;
 use Orchestra\Testbench\TestCase as Orchestra;
 use SiteOrigin\ScoutLSH\ScoutLSHServiceProvider;
-use SiteOrigin\ScoutLSH\Tests\Providor\ScoutLSHTestServiceProvider;
 
 class TestCase extends Orchestra
 {

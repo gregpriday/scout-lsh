@@ -2,7 +2,6 @@
 
 namespace SiteOrigin\ScoutLSH;
 
-use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Laravel\Scout\Builder;
 use Laravel\Scout\EngineManager;
 use SiteOrigin\ScoutLSH\Commands\ScoutLSHCommand;
@@ -20,6 +19,7 @@ class ScoutLSHServiceProvider extends PackageServiceProvider
 
         Builder::macro('withFieldWeights', function (array $weights) {
             $this->fieldWeights = $weights;
+
             return $this;
         });
 

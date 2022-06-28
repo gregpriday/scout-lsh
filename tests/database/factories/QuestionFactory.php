@@ -9,7 +9,7 @@ class QuestionFactory extends Factory
 {
     protected $model = Question::class;
 
-    static array $categories = ['General', 'Technology', 'Science', 'History', 'Geography', 'Art', 'Literature'];
+    public static array $categories = ['General', 'Technology', 'Science', 'History', 'Geography', 'Art', 'Literature'];
 
     public function definition()
     {

@@ -94,7 +94,7 @@ class ScoutLSH extends Engine implements PaginatesEloquentModels
         $query = Cache::remember(
             config('lsh.query.cache_key') . "[{$query}]",
             now()->addMinutes(config('lsh.query.cache_duration')),
-            fn() => TextEncoder::encode([strtolower($query)])[0]
+            fn () => TextEncoder::encode([strtolower($query)])[0]
         );
 
         $similarity = collect($query)
@@ -107,13 +107,13 @@ class ScoutLSH extends Engine implements PaginatesEloquentModels
         $similarityQuery = DB::table('lsh-search-index')
             ->where('model_type', get_class($model));
 
-        $weights = match (True) {
-            !empty($builder->fieldWeights) => $builder->fieldWeights,
+        $weights = match (true) {
+            ! empty($builder->fieldWeights) => $builder->fieldWeights,
             is_a($model, FieldWeights::class) => $model->getTypeWeights($builder),
             default => []
         };
 
-        if(!empty($weights)) {
+        if (! empty($weights)) {
             $weighting = 'CASE `field`';
             foreach ($weights as $type => $weight) {
                 $weighting .= ' WHEN \'' . addslashes($type) . '\' THEN ' . (float) $weight;

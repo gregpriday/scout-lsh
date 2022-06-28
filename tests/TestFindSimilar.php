@@ -3,7 +3,6 @@
 namespace SiteOrigin\ScoutLSH\Tests;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use SiteOrigin\ScoutLSH\Facades\TextEncoder;
 use SiteOrigin\ScoutLSH\Tests\Models\Question;
 
 class TestFindSimilar extends TestCase

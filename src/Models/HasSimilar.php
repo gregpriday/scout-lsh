@@ -4,7 +4,6 @@ namespace SiteOrigin\ScoutLSH\Models;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
-use Laravel\Scout\EngineManager;
 
 trait HasSimilar
 {
@@ -22,13 +21,13 @@ trait HasSimilar
             });
 
         $similarity = [];
-        for($i = 0; $i < 96; $i++) {
+        for ($i = 0; $i < 96; $i++) {
             $similarity[] = 'BIT_COUNT(`lsh1`.`bit_' . $i . '` ^ `lsh2`.`bit_' . $i . '`)';
         }
         $similarity = '0.5 - (' . implode(' + ', $similarity) . ') / 512';
 
         // If $this implements FieldWeights interface
-        if(is_a($this, FieldWeights::class)) {
+        if (is_a($this, FieldWeights::class)) {
             $weights = $this->getTypeWeights();
             $weighting = 'CASE `lsh1`.`field`';
             foreach ($weights as $type => $weight) {
@@ -44,7 +43,7 @@ trait HasSimilar
         $similarityQuery
             ->selectRaw('`lsh1`.`model_id`, ' . $similarity . ' AS `similarity`');
 
-        if(!is_null($filter)) {
+        if (! is_null($filter)) {
             $filter = $filter->getQuery()->select($this->getKeyName());
             $similarityQuery->whereIn('lsh1.model_id', $filter);
         }

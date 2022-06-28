@@ -2,10 +2,8 @@
 
 namespace SiteOrigin\ScoutLSH\Tests;
 
-use Illuminate\Foundation\Testing\DatabaseMigrations;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 use SiteOrigin\ScoutLSH\Facades\TextEncoder;
 use SiteOrigin\ScoutLSH\Tests\database\Seeders\RealEstateSeeder;
 use SiteOrigin\ScoutLSH\Tests\Models\Listing;
@@ -17,14 +15,12 @@ class TestIndexing extends TestCase
 
     public function test_indexing()
     {
-        $this->refreshDatabase();
-
         $questionCount = 50;
 
-        $toReturn = collect(range(0, $questionCount-1))
-            ->map(fn() => [
-                'question' => array_map(fn() => rand(0, 255), range(0, 63)),
-                'answer' => array_map(fn() => rand(0, 255), range(0, 63)),
+        $toReturn = collect(range(0, $questionCount - 1))
+            ->map(fn () => [
+                'question' => array_map(fn () => rand(0, 255), range(0, 95)),
+                'answer' => array_map(fn () => rand(0, 255), range(0, 95)),
             ]);
 
         TextEncoder::shouldReceive('encode')
@@ -34,27 +30,69 @@ class TestIndexing extends TestCase
         $questions = Question::factory()->count($questionCount)->create();
 
         // Check that the table lsh-search-index has entries for all the questions
-        $this->assertEquals($questionCount*2, DB::table('lsh-search-index')->count());
+        $this->assertEquals($questionCount * 2, DB::table('lsh-search-index')->count());
 
         TextEncoder::shouldReceive('encode')
             ->twice()
-            ->andReturn([0 => array_map(fn() => rand(0, 255), range(0, 63))]);
+            ->andReturn([0 => array_map(fn () => rand(0, 255), range(0, 95))]);
 
         // Perform a search query and make sure we get some results
-        $results = Question::search('Can guinea pigs eat strawberries?')->get();
+        $results = Question::search('random search query')->get();
         $this->assertCount($questionCount, $results);
 
-        $results = Question::search('Can guinea pigs eat strawberries?')->within(Question::where('category', 'Technology'))->get();
+        $results = Question::search('another search query')->within(Question::where('category', 'Technology'))->get();
         $categories = $results->pluck('category')->unique();
 
         $this->assertCount(1, $categories);
         $this->assertEquals('Technology', $categories->first());
     }
 
-    public function test_searching_real_estate()
+    public function test_searching_with_field_weights()
     {
         $this->seed(RealEstateSeeder::class);
-        $results = Listing::search("home in chapmans bay estate")->get();
-        $results->pluck('title')->dd();
+
+        // The default search should not get this correct
+        $first = Listing::search("land")->get()->pluck('title')->first();
+        $this->assertStringStartsNotWith("Vacant Land", $first);
+
+        // When we search only the title, then it should
+        $first = Listing::search("land")->withFieldWeights(['title' => 1])->get()->pluck('title')->first();
+        $this->assertStringStartsWith("Vacant Land", $first);
+    }
+
+    public function test_question_answering()
+    {
+        Question::create([
+            'question' => 'Store Business Hours',
+            'answer' => 'Our store is open from 9am to 5pm.',
+        ]);
+
+        Question::create([
+            'question' => 'Store Address',
+            'answer' => 'Our store is located at 123 Main St.',
+        ]);
+
+        Question::create([
+            'question' => 'Services',
+            'answer' => 'We offer some really fantastic services.',
+        ]);
+
+        Question::create([
+            'question' => 'About Us',
+            'answer' => 'We are a company that sells stuff.',
+        ]);
+
+        Question::create([
+            'question' => 'Contact Us',
+            'answer' => 'If you would like to contact us, please call us at 555-555-5555.',
+        ]);
+
+        Question::create([
+            'question' => 'Terms of Service',
+            'answer' => 'Terms of service (also known as terms of use and terms and conditions, commonly abbreviated as TOS or ToS, ToU or T&C) are the legal agreements between a service provider and a person who wants to use that service. The person must agree to abide by the terms of service in order to use the offered service.',
+        ]);
+
+        $question = Question::search('how can I get hold of you?')->get()->first();
+        $this->assertEquals('Contact Us', $question->question);
     }
 }

@@ -13,7 +13,7 @@ return new class extends Migration
 
             $table->string('question');
             $table->text('answer');
-            $table->string('category');
+            $table->string('category')->nullable();
 
             $table->timestamps();
         });

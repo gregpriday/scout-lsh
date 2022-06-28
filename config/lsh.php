@@ -1,5 +1,10 @@
 <?php
 // config for SiteOrigin/ScoutLSH
 return [
-    'encoder' => 'https://encoder-m52mm4ig3q-uc.a.run.app/',
+    'encoder' => 'http://127.0.0.1:5000/encode',
+    'model' => 'default',
+    'query' => [
+        'cache_duration' => 43200,
+        'cache_key' => 'lsh-search:query',
+    ]
 ];

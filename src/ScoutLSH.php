@@ -3,28 +3,31 @@
 namespace SiteOrigin\ScoutLSH;
 
 use ArrayIterator;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\LazyCollection;
 use Laravel\Scout\Builder;
 use Laravel\Scout\Contracts\PaginatesEloquentModels;
 use Laravel\Scout\Engines\Engine;
 use SiteOrigin\ScoutLSH\Facades\TextEncoder;
+use SiteOrigin\ScoutLSH\Models\FieldWeights;
 
 class ScoutLSH extends Engine implements PaginatesEloquentModels
 {
     public function update($models)
     {
         // Get all the texts that we're going to index.
-        $texts = $models->map(fn($model) => $model->toSearchableArray());
-        $encoded = TextEncoder::encode($texts->flatten(1)->toArray());
+        $texts = $models->map(fn ($model) => $model->toSearchableArray());
+        $encoded = TextEncoder::encode($texts->flatten(1)->map(fn ($t) => strtolower($t))->toArray());
 
         // We need an iterator for $encoded
         $encoded = new ArrayIterator($encoded);
 
         // We need to update the $texts array to include the encoded text.
         // Encoded has been flattened though
-        $texts = $texts->map(function($texts) use ($encoded) {
-            foreach($texts as $key => $text) {
+        $texts = $texts->map(function ($texts) use ($encoded) {
+            foreach ($texts as $key => $text) {
                 $texts[$key] = $encoded->current();
                 $encoded->next();
             }
@@ -34,10 +37,10 @@ class ScoutLSH extends Engine implements PaginatesEloquentModels
 
         // Finally, we'll insert these into the index table
         $models->zip($texts)
-            ->each(function($item) {
+            ->each(function ($item) {
                 [$model, $texts] = $item;
 
-                foreach($texts as $key => $encoded) {
+                foreach ($texts as $key => $encoded) {
                     DB::table('lsh-search-index')
                         ->updateOrInsert(
                             [
@@ -46,7 +49,7 @@ class ScoutLSH extends Engine implements PaginatesEloquentModels
                                 'field' => $key,
                             ],
                             collect($encoded)
-                                ->mapWithKeys(fn($value, $key) => ['bit_' . $key => $value])
+                                ->mapWithKeys(fn ($value, $key) => ['bit_' . $key => $value])
                                 ->toArray()
                         );
                 }
@@ -55,7 +58,7 @@ class ScoutLSH extends Engine implements PaginatesEloquentModels
 
     public function delete($models)
     {
-        $models->each(function($model){
+        $models->each(function ($model) {
             DB::table('lsh-search-index')
                 ->where('model_id', $model->getKey())
                 ->where('model_type', get_class($model))
@@ -85,38 +88,51 @@ class ScoutLSH extends Engine implements PaginatesEloquentModels
             ->simplePaginate($perPage, ['*'], 'page', $page);
     }
 
-    private function buildSearchQuery(Builder $builder)
+    public function buildSearchQuery(Builder $builder)
     {
-        $encoded = TextEncoder::encode([$builder->query])[0];
+        $query = $builder->query;
+        $query = Cache::remember(
+            config('lsh.query.cache_key') . "[{$query}]",
+            now()->addMinutes(config('lsh.query.cache_duration')),
+            fn() => TextEncoder::encode([strtolower($query)])[0]
+        );
 
-        $similarity = collect($encoded)
+        $similarity = collect($query)
             ->map(fn ($v, $i) => 'BIT_COUNT(`bit_' . (int) $i . '` ^ ' . (int) $v . ')')
             ->join('+');
         $similarity = '0.5 - (' . $similarity . ') / 512';
 
         $model = $builder->model;
-        $weights = method_exists($model, 'getTypeWeights') ? $model->getTypeWeights($builder) : [];
+
+        $similarityQuery = DB::table('lsh-search-index')
+            ->where('model_type', get_class($model));
+
+        $weights = match (True) {
+            !empty($builder->fieldWeights) => $builder->fieldWeights,
+            is_a($model, FieldWeights::class) => $model->getTypeWeights($builder),
+            default => []
+        };
 
         if(!empty($weights)) {
             $weighting = 'CASE `field`';
-            foreach($weights as $type => $weight) {
+            foreach ($weights as $type => $weight) {
                 $weighting .= ' WHEN \'' . addslashes($type) . '\' THEN ' . (float) $weight;
             }
             $weighting .= ' END';
             $similarity .= ' * (' . $weighting . ')';
-        }
 
-        $similarityQuery = DB::table('lsh-search-index')
-            ->selectRaw('`model_type`, `model_id`, `field`, ' . $similarity . ' AS `similarity`')
-            ->where('model_type', get_class($model));
-
-        if(!empty($weights)) {
             $similarityQuery->whereIn('field', array_keys($weights));
         }
 
-        if(!empty($builder->index)) {
+        $similarityQuery->selectRaw('`model_type`, `model_id`, `field`, ' . $similarity . ' AS `similarity`');
+
+        if (! empty($weights)) {
+            $similarityQuery->whereIn('field', array_keys($weights));
+        }
+
+        if (! empty($builder->index)) {
             $indexQuery = $builder->index;
-            if($indexQuery instanceof \Illuminate\Database\Eloquent\Builder) {
+            if ($indexQuery instanceof \Illuminate\Database\Eloquent\Builder) {
                 // If this is an Eloquent query, we need to get the underlying query builder
                 $indexQuery = $indexQuery->getQuery()->select($model->getKeyName());
             }

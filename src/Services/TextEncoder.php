@@ -17,7 +17,7 @@ class TextEncoder
     {
         $keys = array_keys($texts);
 
-        $response = $this->client->post('/', [
+        $response = $this->client->post('', [
             'json' => [
                 'texts' => array_values($texts),
             ],

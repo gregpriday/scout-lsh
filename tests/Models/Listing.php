@@ -6,8 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Laravel\Scout\Builder;
 use Laravel\Scout\Searchable;
+use SiteOrigin\ScoutLSH\Models\FieldWeights;
 
-class Listing extends Model
+class Listing extends Model implements FieldWeights
 {
     use Searchable;
 
@@ -23,11 +24,11 @@ class Listing extends Model
         ];
     }
 
-    public function getTypeWeights(Builder $builder): array
+    public function getTypeWeights(Builder $builder = null): array
     {
         return [
             'title' => 1,
-            'description' => 0.8,
+            'description' => 1,
         ];
     }
 }

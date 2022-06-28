@@ -14,7 +14,7 @@ return new class extends Migration
             $table->string('field')->default('');
 
             // Create 64 unsigned 8 bit integer fields
-            for ($i = 0; $i < 64; $i++) {
+            for ($i = 0; $i < 96; $i++) {
                 $table->unsignedTinyInteger("bit_{$i}");
             }
 

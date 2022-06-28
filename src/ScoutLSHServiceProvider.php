@@ -5,10 +5,10 @@ namespace SiteOrigin\ScoutLSH;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Laravel\Scout\Builder;
 use Laravel\Scout\EngineManager;
+use SiteOrigin\ScoutLSH\Commands\ScoutLSHCommand;
 use SiteOrigin\ScoutLSH\Services\TextEncoder;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
-use SiteOrigin\ScoutLSH\Commands\ScoutLSHCommand;
 
 class ScoutLSHServiceProvider extends PackageServiceProvider
 {
@@ -18,12 +18,12 @@ class ScoutLSHServiceProvider extends PackageServiceProvider
             return new ScoutLSH();
         });
 
-        Builder::macro('fromSubQuery', function(EloquentBuilder $subQuery){
-            $this->fromSubQuery = $subQuery;
+        Builder::macro('withFieldWeights', function (array $weights) {
+            $this->fieldWeights = $weights;
             return $this;
         });
 
-        $this->app->singleton(TextEncoder::class, function(){
+        $this->app->singleton(TextEncoder::class, function () {
             return new TextEncoder(config('lsh.encoder'));
         });
     }

@@ -6,11 +6,14 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Laravel\Scout\Builder;
 use Laravel\Scout\Searchable;
-use SiteOrigin\ScoutLSH\HashSearchable;
+use SiteOrigin\ScoutLSH\Models\FieldWeights;
+use SiteOrigin\ScoutLSH\Models\HasSimilar;
 
-class Question extends Model
+class Question extends Model implements FieldWeights
 {
-    use Searchable, HasFactory;
+    use Searchable;
+    use HasFactory;
+    use HasSimilar;
 
     protected $table = 'questions';
     protected $guarded = [];
@@ -24,11 +27,11 @@ class Question extends Model
         ];
     }
 
-    public function getTypeWeights(Builder $builder): array
+    public function getTypeWeights(Builder $builder = null): array
     {
         return [
             'question' => 1.0,
-            'answer' => 0.5,
+            'answer' => 0.75,
         ];
     }
 }

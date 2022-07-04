@@ -52,7 +52,7 @@ class TestFindSimilar extends TestCase
             'answer' => 'Yes, it is a good degree',
         ]);
 
-        $similar = $question->findSimilar()->first();
+        $similar = $question->similar()->first();
         $this->assertEquals('How can you be happy?', $similar->question);
     }
 }

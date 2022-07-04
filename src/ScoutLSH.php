@@ -10,6 +10,7 @@ use Illuminate\Support\LazyCollection;
 use Laravel\Scout\Builder;
 use Laravel\Scout\Contracts\PaginatesEloquentModels;
 use Laravel\Scout\Engines\Engine;
+use SiteOrigin\ScoutLSH\Facades\LSHSearcher;
 use SiteOrigin\ScoutLSH\Facades\TextEncoder;
 use SiteOrigin\ScoutLSH\Models\FieldWeights;
 
@@ -41,15 +42,17 @@ class ScoutLSH extends Engine implements PaginatesEloquentModels
                 [$model, $texts] = $item;
 
                 foreach ($texts as $key => $encoded) {
-                    DB::table('lsh-search-index')
+                    DB::table('lsh_search_index')
                         ->updateOrInsert(
                             [
                                 'model_id' => $model->getKey(),
                                 'model_type' => get_class($model),
                                 'field' => $key,
                             ],
-                            collect($encoded)
-                                ->mapWithKeys(fn ($value, $key) => ['bit_' . $key => $value])
+                            collect(str_split($encoded))
+                                ->chunk(16)
+                                ->map(fn ($chunk) => base_convert($chunk->join(''), 16, 10))
+                                ->mapWithKeys(fn ($char, $i) => ["bit_{$i}" => $char])
                                 ->toArray()
                         );
                 }
@@ -59,7 +62,7 @@ class ScoutLSH extends Engine implements PaginatesEloquentModels
     public function delete($models)
     {
         $models->each(function ($model) {
-            DB::table('lsh-search-index')
+            DB::table('lsh_search_index')
                 ->where('model_id', $model->getKey())
                 ->where('model_type', get_class($model))
                 ->delete();
@@ -90,67 +93,24 @@ class ScoutLSH extends Engine implements PaginatesEloquentModels
 
     public function buildSearchQuery(Builder $builder)
     {
+        // Get the search query
         $query = $builder->query;
         $query = Cache::remember(
             config('lsh.query.cache_key') . "[{$query}]",
             now()->addMinutes(config('lsh.query.cache_duration')),
-            fn() => TextEncoder::encode([strtolower($query)])[0]
+            fn() => TextEncoder::encode(['query: ' . strtolower($query)])[0]
         );
-
-        $similarity = collect($query)
-            ->map(fn ($v, $i) => 'BIT_COUNT(`bit_' . (int) $i . '` ^ ' . (int) $v . ')')
-            ->join('+');
-        $similarity = '0.5 - (' . $similarity . ') / 512';
-
         $model = $builder->model;
 
-        $similarityQuery = DB::table('lsh-search-index')
-            ->where('model_type', get_class($model));
-
-        $weights = match (True) {
-            !empty($builder->fieldWeights) => $builder->fieldWeights,
-            is_a($model, FieldWeights::class) => $model->getTypeWeights($builder),
-            default => []
-        };
-
-        if(!empty($weights)) {
-            $weighting = 'CASE `field`';
-            foreach ($weights as $type => $weight) {
-                $weighting .= ' WHEN \'' . addslashes($type) . '\' THEN ' . (float) $weight;
-            }
-            $weighting .= ' END';
-            $similarity .= ' * (' . $weighting . ')';
-
-            $similarityQuery->whereIn('field', array_keys($weights));
-        }
-
-        $similarityQuery->selectRaw('`model_type`, `model_id`, `field`, ' . $similarity . ' AS `similarity`');
-
-        if (! empty($weights)) {
-            $similarityQuery->whereIn('field', array_keys($weights));
-        }
-
-        if (! empty($builder->index)) {
+        // Check if we're searching inside another query
+        if (! empty($builder->index) && $builder->index instanceof \Illuminate\Database\Eloquent\Builder) {
             $indexQuery = $builder->index;
-            if ($indexQuery instanceof \Illuminate\Database\Eloquent\Builder) {
-                // If this is an Eloquent query, we need to get the underlying query builder
-                $indexQuery = $indexQuery->getQuery()->select($model->getKeyName());
-            }
-            $similarityQuery->whereIn('model_id', $indexQuery);
+        } else {
+            $indexQuery = $model::query();
         }
 
-        // Select from this subquery where we group by model_id and make score the sum of all the similarities
-        $combinedQuery = DB::table('lsh-search-index')
-            ->fromSub($similarityQuery, 'sub')
-            ->groupBy('model_id')
-            ->selectRaw('`model_id`, SUM(`similarity`) AS `score`')
-            ->orderByDesc('score');
-
-        // Now, we need to create a $model query that returns models that match the search query.
-        // We'll do this by joining the results table to the model table.
-        return $model->query()
-            ->rightJoinSub($combinedQuery, 'combined', 'combined.model_id', '=', $model->getTable() . '.' . $model->getKeyName())
-            ->orderByDesc('score');
+        $weights = method_exists($model, 'getSearchWeights') ? $model->getSearchWeights() : [];
+        return LSHSearcher::searchByEncoded($query, $indexQuery, config('lsh.search_candidates'), $weights);
     }
 
     public function mapIds($results)

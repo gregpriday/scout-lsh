@@ -8,17 +8,19 @@ return new class extends Migration
 {
     public function up()
     {
-        Schema::create('lsh-search-index', function (Blueprint $table) {
+        Schema::create('lsh_search_index', function (Blueprint $table) {
+            $table->id();
             $table->string('model_type');
             $table->unsignedBigInteger('model_id');
             $table->string('field')->default('');
 
-            // Create 64 unsigned 8 bit integer fields
-            for ($i = 0; $i < 96; $i++) {
-                $table->unsignedTinyInteger("bit_{$i}");
+            // We need to store 1024 bits
+            for($i = 0; $i < 16; $i++) {
+                $table->unsignedBigInteger("bit_{$i}");
             }
 
             $table->unique(['model_type', 'model_id', 'field']);
+            $table->index(['model_type', 'model_id']);
         });
     }
 };

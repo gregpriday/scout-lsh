@@ -41,4 +41,15 @@ class TestCase extends Orchestra
         $this->loadMigrationsFrom(realpath(__DIR__.'/../database/migrations/'));
         $this->loadMigrationsFrom(realpath(__DIR__.'/database/migrations/'));
     }
+
+    /**
+     * @param int $length The length of the hex string to generate
+     * @return string
+     * @throws \Exception
+     */
+    protected function randomHashString(int $length = 256): string
+    {
+        // Create a random string of $length with hex characters
+        return strtoupper(bin2hex(random_bytes($length / 2)));
+    }
 }

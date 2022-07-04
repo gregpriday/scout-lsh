@@ -27,11 +27,19 @@ class Question extends Model implements FieldWeights
         ];
     }
 
-    public function getTypeWeights(Builder $builder = null): array
+    public function getSearchWeights(Builder $builder = null): array
     {
         return [
             'question' => 1.0,
             'answer' => 0.75,
+        ];
+    }
+
+    public function getSimilarWeights(Builder $builder = null): array
+    {
+        return [
+            'question' => 1.0,
+            'answer' => 0.5,
         ];
     }
 }

@@ -24,7 +24,7 @@ class Listing extends Model implements FieldWeights
         ];
     }
 
-    public function getTypeWeights(Builder $builder = null): array
+    public function getSearchWeights(Builder $builder = null): array
     {
         return [
             'title' => 1,

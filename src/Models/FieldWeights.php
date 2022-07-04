@@ -6,5 +6,6 @@ use Laravel\Scout\Builder;
 
 interface FieldWeights
 {
-    public function getTypeWeights(Builder $builder = null): array;
+    public function getSearchWeights(Builder $builder = null): array;
+    public function getSimilarWeights(Builder $builder = null): array;
 }

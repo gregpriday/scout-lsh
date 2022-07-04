@@ -15,7 +15,7 @@ class TestIndexing extends TestCase
 
     public function test_indexing()
     {
-        $questionCount = 50;
+        $questionCount = 100;
 
         $toReturn = collect(range(0, $questionCount - 1))
             ->map(fn () => [
@@ -29,8 +29,8 @@ class TestIndexing extends TestCase
 
         $questions = Question::factory()->count($questionCount)->create();
 
-        // Check that the table lsh-search-index has entries for all the questions
-        $this->assertEquals($questionCount * 2, DB::table('lsh-search-index')->count());
+        // Check that the table lsh_search_index has entries for all the questions
+        $this->assertEquals($questionCount * 2, DB::table('lsh_search_index')->count());
 
         TextEncoder::shouldReceive('encode')
             ->twice()
@@ -88,11 +88,19 @@ class TestIndexing extends TestCase
         ]);
 
         Question::create([
+            'question' => 'Bookkeeping Service',
+            'answer' => 'We offer bookkeeping and accounting services to keep your business accounting up to date.',
+        ]);
+
+        Question::create([
             'question' => 'Terms of Service',
             'answer' => 'Terms of service (also known as terms of use and terms and conditions, commonly abbreviated as TOS or ToS, ToU or T&C) are the legal agreements between a service provider and a person who wants to use that service. The person must agree to abide by the terms of service in order to use the offered service.',
         ]);
 
-        $question = Question::search('how can I get hold of you?')->get()->first();
+        $question = Question::search('what are your contact details?')->get()->first();
         $this->assertEquals('Contact Us', $question->question);
+
+        $question = Question::search('can you do my accounting?')->get()->first();
+        $this->assertEquals('Bookkeeping Service', $question->question);
     }
 }

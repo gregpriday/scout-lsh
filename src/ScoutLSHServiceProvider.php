@@ -5,7 +5,7 @@ namespace SiteOrigin\ScoutLSH;
 use Illuminate\Database\Eloquent\Builder as EloquentBuilder;
 use Laravel\Scout\Builder;
 use Laravel\Scout\EngineManager;
-use SiteOrigin\ScoutLSH\Commands\ScoutLSHCommand;
+use SiteOrigin\ScoutLSH\Services\LSHSearcher;
 use SiteOrigin\ScoutLSH\Services\TextEncoder;
 use Spatie\LaravelPackageTools\Package;
 use Spatie\LaravelPackageTools\PackageServiceProvider;
@@ -14,7 +14,7 @@ class ScoutLSHServiceProvider extends PackageServiceProvider
 {
     public function packageBooted()
     {
-        resolve(EngineManager::class)->extend('vector', function () {
+        app(EngineManager::class)->extend('vector', function () {
             return new ScoutLSH();
         });
 
@@ -26,6 +26,10 @@ class ScoutLSHServiceProvider extends PackageServiceProvider
         $this->app->singleton(TextEncoder::class, function () {
             return new TextEncoder(config('lsh.encoder'));
         });
+
+        $this->app->singleton(LSHSearcher::class, function () {
+            return new LSHSearcher(app(TextEncoder::class));
+        });
     }
 
     public function configurePackage(Package $package): void
@@ -33,7 +37,6 @@ class ScoutLSHServiceProvider extends PackageServiceProvider
         $package
             ->name('laravel-scout-lsh')
             ->hasConfigFile('lsh')
-            ->hasMigration('create_lash_search_index_table.php')
-            ->hasCommand(ScoutLSHCommand::class);
+            ->hasMigration('create_lash_search_index_table.php');
     }
 }

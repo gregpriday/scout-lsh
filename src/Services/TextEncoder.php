@@ -24,6 +24,7 @@ class TextEncoder
         ]);
 
         $encoded = json_decode($response->getBody())->encoded;
+
         return array_combine($keys, $encoded);
     }
 }

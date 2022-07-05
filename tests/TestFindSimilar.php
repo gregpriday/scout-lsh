@@ -13,7 +13,7 @@ class TestFindSimilar extends TestCase
     {
         $question = Question::create([
             'question' => 'Are married people happy?',
-            'answer' => 'Married people can be slightly happier than their unmarried couterparts.',
+            'answer' => 'Married people can be slightly happier than their unmarried counterparts.',
         ]);
 
         Question::create([
@@ -46,12 +46,19 @@ class TestFindSimilar extends TestCase
             'answer' => 'There is no shortcut to success',
         ]);
 
-        Question::create([
+        $question = Question::create([
             'question' => 'Is computer science a good degree?',
             'answer' => 'Yes, it is a good degree',
         ]);
 
-        $similar = $question->similar()->first();
-        $this->assertEquals('How can you be happy?', $similar->question);
+        Question::create([
+            'question' => 'Which is the best degree?',
+            'answer' => 'Personally I recommend a degree in a STEM field, but you can choose any field.',
+        ]);
+
+        $similar = $question->similar()->limit(2)->get()->pluck('question');
+
+        $this->assertEquals('Can you make a lot of money from Computer Science?', $similar[0]);
+        $this->assertEquals('Which is the best degree?', $similar[1]);
     }
 }

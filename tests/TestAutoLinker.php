@@ -37,7 +37,7 @@ class TestAutoLinker extends TestCase
             'answer' => 'You can be happy by doing things',
         ]);
 
-        Question::create([
+        $purpose = Question::create([
             'question' => 'How do you find a purpose in life?',
             'answer' => 'You find your passion, master your passion, then do it a lot.',
         ]);
@@ -47,7 +47,7 @@ class TestAutoLinker extends TestCase
             'answer' => 'There is no shortcut to success',
         ]);
 
-        $question = Question::create([
+        $degree = Question::create([
             'question' => 'Is computer science a good degree?',
             'answer' => 'Yes, it is a good degree',
         ]);
@@ -58,10 +58,16 @@ class TestAutoLinker extends TestCase
         ]);
 
         $autoLinker = app(AutoLinker::class);
-        $html = 'If you are lacking <a href="#search.question">purpose in your life</a> then you could consider getting a <a href="#search">computer science degree</a> or perhaps a pet <a href="#search">guinea pig</a>.';
+        $html = 'If you are lacking <a href="#search:finding a purpose in life">something</a> then you could consider getting a <a href="#search">computer science degree</a> or perhaps a pet <a href="#search">guinea pig</a>.';
         $html = $autoLinker->autolink($html, [
             0.65, [Question::class], ['question' => 1.0, 'answer' => 0.5],
         ]);
-        dd($html);
+
+        // Check that the autolinked text is correct.
+        $this->assertStringContainsString($purpose->url, $html);
+        $this->assertStringContainsString($degree->url, $html);
+
+        // Make sure there are exactly 2 occurances of http://
+        $this->assertEquals(2, substr_count($html, 'http://'));
     }
 }

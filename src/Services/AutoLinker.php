@@ -40,14 +40,23 @@ class AutoLinker
         // We're going to replace any link with a href that starts with '#search' with a link to the top search result.
         $links = collect($xpath->query('//a[starts-with(@href, "#search")]'));
 
-        $config = $config ?? $this->config;
-        $results = $this->searcher->topResult(
-            $links->map(fn ($link) => $link->textContent)->toArray(),
-            ...$config
-        );
+        $queries = $links->map(function ($link) use ($doc) {
+            $href = $link->getAttribute('href');
+            // If the href is exactly '#search', then we'll use the text of the link as the query.
+            if (str_starts_with($href, '#search:')) {
+                $query = explode(':', $href, 2)[1];
+            } else {
+                $query = $link->nodeValue;
+            }
 
-        foreach ($links as $link) {
-            $result = $results[$link->textContent];
+            return $query;
+        })->toArray();
+
+        $config = $config ?? $this->config;
+        $results = $this->searcher->topResult($queries, ...$config);
+
+        foreach ($links as $i => $link) {
+            $result = $results[$queries[$i]];
             if (is_null($result) || empty($result->url)) {
                 // Unwrap this link because we don't have a page to link to
                 $span = $doc->createTextNode($link->textContent);

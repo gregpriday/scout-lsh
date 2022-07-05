@@ -3,7 +3,6 @@
 namespace SiteOrigin\ScoutLSH\Services;
 
 use GuzzleHttp\Client;
-use Illuminate\Support\Collection;
 
 class TextEncoder
 {
@@ -17,8 +16,8 @@ class TextEncoder
     public function encode(array $texts): array
     {
         return array_map(
-            fn($e) => array_map(
-                fn($c) => base_convert(implode('', $c), 16, 10),
+            fn ($e) => array_map(
+                fn ($c) => base_convert(implode('', $c), 16, 10),
                 array_chunk(str_split($e), 16)
             ),
             $this->encodeTexts($texts)

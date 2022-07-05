@@ -4,7 +4,6 @@ namespace SiteOrigin\ScoutLSH\Services;
 
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class LSHSearcher
@@ -32,6 +31,7 @@ class LSHSearcher
     public function searchByQuery(string $query, Builder $builder, int $candidates = 100, array $weights = []): Builder
     {
         $query = collect($this->encoder->encodeArray([$query])[0]);
+
         return $this->searchByEncoded($query, $builder, $candidates, $weights);
     }
 
@@ -48,7 +48,7 @@ class LSHSearcher
         $candidatesQuery = DB::table('lsh_search_index')
             ->select([
                 'id',
-                DB::raw($this->bitSimilarityQuery(array_slice($query, 0, 4)) . ' * ' . $this->weightingQuery($weights) . ' AS score')
+                DB::raw($this->bitSimilarityQuery(array_slice($query, 0, 4)) . ' * ' . $this->weightingQuery($weights) . ' AS score'),
             ])
             ->where('model_type', $builder->getModel()->getMorphClass())
             ->whereIn('model_id', $builder->select('id'))
@@ -56,7 +56,7 @@ class LSHSearcher
             ->having('score', '>', 0)
             ->limit($candidates);
 
-        if(!empty($weights)) {
+        if (! empty($weights)) {
             $candidatesQuery->whereIn('field', array_keys($weights));
         }
 
@@ -98,7 +98,7 @@ class LSHSearcher
             ->orderByDesc('score')
             ->having('score', '>', 0);
 
-        if(!empty($weights)) {
+        if (! empty($weights)) {
             $resultsQuery->whereIn('lsh_search_index.field', array_keys($weights));
         }
 
@@ -131,13 +131,13 @@ class LSHSearcher
      */
     public function topResult(array $queries, float $threshold = 0.65, ?array $models = null, array $weights = []): array
     {
-        $encoded = $this->encoder->encode(array_map(fn($q) => 'query: ' . $q, $queries));
+        $encoded = $this->encoder->encode(array_map(fn ($q) => 'query: ' . $q, $queries));
         $returnModels = [];
-        foreach($encoded as $i => $query) {
+        foreach ($encoded as $i => $query) {
             $subquery = DB::table('lsh_search_index')
                 ->select([
                     'model_type', 'model_id', 'field',
-                    DB::raw($this->bitSimilarityQuery($query) . ' * ' . $this->weightingQuery($weights) . ' AS score')
+                    DB::raw($this->bitSimilarityQuery($query) . ' * ' . $this->weightingQuery($weights) . ' AS score'),
                 ]);
 
             $result = DB::table('lsh_search_index')
@@ -149,7 +149,7 @@ class LSHSearcher
                 ->limit(1)
                 ->first();
 
-            $returnModels[] = !is_null($result) ? $result->model_type::find($result->model_id) : null;
+            $returnModels[] = ! is_null($result) ? $result->model_type::find($result->model_id) : null;
         }
 
         return array_combine($queries, $returnModels);
@@ -164,7 +164,7 @@ class LSHSearcher
     private function bitSimilarityQuery(array $query): string
     {
         $similarity = [];
-        foreach($query as $i => $bit) {
+        foreach ($query as $i => $bit) {
             $similarity[] = 'BIT_COUNT(`bit_' . $i . '` ^ ' . $bit . ')';
         }
 
@@ -184,24 +184,25 @@ class LSHSearcher
     private function bitSimilarColumns(int $take, string $table1, string $table2 = 'lsh_search_index'): string
     {
         $similarity = [];
-        for($i = 0; $i < $take; $i++) {
+        for ($i = 0; $i < $take; $i++) {
             $similarity[] = 'BIT_COUNT(`' . $table1 . '`.`bit_' . $i . '` ^ `' . $table2 . '`.`bit_' . $i . '`)';
         }
 
-        return '0.5 - ((' . implode(' + ', $similarity) . ') / ' . ($take*32) . ')';
+        return '0.5 - ((' . implode(' + ', $similarity) . ') / ' . ($take * 32) . ')';
     }
 
     private function weightingQuery(array $weights, string $table = null): string
     {
-        if(!empty($weights)) {
-            $weighting = 'CASE ' . ( !is_null($table) ? '`' . $table . '`.' : '' ) . '`field`';
+        if (! empty($weights)) {
+            $weighting = 'CASE ' . (! is_null($table) ? '`' . $table . '`.' : '') . '`field`';
             foreach ($weights as $type => $weight) {
                 $weighting .= ' WHEN \'' . addslashes($type) . '\' THEN ' . (float) $weight;
             }
             $weighting .= ' END';
+
             return $weighting;
         }
+
         return '1';
     }
-
 }

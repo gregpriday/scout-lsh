@@ -33,7 +33,7 @@ class ScoutLSHServiceProvider extends PackageServiceProvider
             return new LSHSearcher(app(TextEncoder::class));
         });
 
-        $this->app->singleton(AutoLinker::class, function(){
+        $this->app->singleton(AutoLinker::class, function () {
             return new AutoLinker(app(LSHSearcher::class), app(TextEncoder::class));
         });
 

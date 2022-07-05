@@ -3,11 +3,8 @@
 namespace SiteOrigin\ScoutLSH\Tests;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
 use SiteOrigin\ScoutLSH\Facades\TextEncoder;
 use SiteOrigin\ScoutLSH\Services\LSHSearcher;
-use SiteOrigin\ScoutLSH\Tests\database\Seeders\RealEstateSeeder;
-use SiteOrigin\ScoutLSH\Tests\Models\Listing;
 use SiteOrigin\ScoutLSH\Tests\Models\Question;
 
 class TestLSHSearcher extends TestCase
@@ -44,6 +41,5 @@ class TestLSHSearcher extends TestCase
         $end = microtime(true);
 
         dd($end - $start);
-
     }
 }

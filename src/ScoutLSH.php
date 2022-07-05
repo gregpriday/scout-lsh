@@ -3,7 +3,6 @@
 namespace SiteOrigin\ScoutLSH;
 
 use ArrayIterator;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\LazyCollection;
@@ -12,7 +11,6 @@ use Laravel\Scout\Contracts\PaginatesEloquentModels;
 use Laravel\Scout\Engines\Engine;
 use SiteOrigin\ScoutLSH\Facades\LSHSearcher;
 use SiteOrigin\ScoutLSH\Facades\TextEncoder;
-use SiteOrigin\ScoutLSH\Models\FieldWeights;
 
 class ScoutLSH extends Engine implements PaginatesEloquentModels
 {
@@ -50,7 +48,7 @@ class ScoutLSH extends Engine implements PaginatesEloquentModels
                                 'field' => $key,
                             ],
                             array_combine(
-                                array_map(fn($i) => 'bit_' . $i, array_keys($encoded)),
+                                array_map(fn ($i) => 'bit_' . $i, array_keys($encoded)),
                                 $encoded
                             )
                         );
@@ -97,7 +95,7 @@ class ScoutLSH extends Engine implements PaginatesEloquentModels
         $query = Cache::remember(
             config('lsh.query.cache_key') . "[{$query}]",
             now()->addMinutes(config('lsh.query.cache_duration')),
-            fn() => TextEncoder::encode(['query: ' . strtolower($query)])[0]
+            fn () => TextEncoder::encode(['query: ' . strtolower($query)])[0]
         );
         $model = $builder->model;
 
@@ -109,6 +107,7 @@ class ScoutLSH extends Engine implements PaginatesEloquentModels
         }
 
         $weights = method_exists($model, 'getSearchWeights') ? $model->getSearchWeights() : [];
+
         return LSHSearcher::searchByEncoded($query, $indexQuery, config('lsh.search_candidates'), $weights);
     }
 

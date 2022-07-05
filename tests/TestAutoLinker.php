@@ -3,12 +3,7 @@
 namespace SiteOrigin\ScoutLSH\Tests;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Support\Facades\DB;
-use SiteOrigin\ScoutLSH\Facades\TextEncoder;
 use SiteOrigin\ScoutLSH\Services\AutoLinker;
-use SiteOrigin\ScoutLSH\Services\LSHSearcher;
-use SiteOrigin\ScoutLSH\Tests\database\Seeders\RealEstateSeeder;
-use SiteOrigin\ScoutLSH\Tests\Models\Listing;
 use SiteOrigin\ScoutLSH\Tests\Models\Question;
 
 class TestAutoLinker extends TestCase
@@ -68,6 +63,5 @@ class TestAutoLinker extends TestCase
             0.65, [Question::class], ['question' => 1.0, 'answer' => 0.5],
         ]);
         dd($html);
-
     }
 }

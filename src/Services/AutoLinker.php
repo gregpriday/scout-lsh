@@ -46,9 +46,9 @@ class AutoLinker
             ...$config
         );
 
-        foreach($links as $link) {
+        foreach ($links as $link) {
             $result = $results[$link->textContent];
-            if(is_null($result) || empty($result->url)) {
+            if (is_null($result) || empty($result->url)) {
                 // Unwrap this link because we don't have a page to link to
                 $span = $doc->createTextNode($link->textContent);
                 $link->parentNode->replaceChild($span, $link);

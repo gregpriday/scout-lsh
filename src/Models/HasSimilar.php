@@ -3,16 +3,14 @@
 namespace SiteOrigin\ScoutLSH\Models;
 
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\DB;
-use Laravel\Scout\EngineManager;
 use SiteOrigin\ScoutLSH\Facades\LSHSearcher;
 
 trait HasSimilar
 {
     public function scopeSimilar(Builder $query, ?array $weights = null): Builder
     {
-        if(is_null($weights)) {
-            $weights = match(True) {
+        if (is_null($weights)) {
+            $weights = match (true) {
                 method_exists($this, 'getSimilarWeights') => $this->getSimilarWeights(),
                 method_exists($this, 'getSearchWeights') => $this->getSearchWeights(),
                 default => [],

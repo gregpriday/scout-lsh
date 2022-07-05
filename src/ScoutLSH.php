@@ -49,11 +49,10 @@ class ScoutLSH extends Engine implements PaginatesEloquentModels
                                 'model_type' => get_class($model),
                                 'field' => $key,
                             ],
-                            collect(str_split($encoded))
-                                ->chunk(16)
-                                ->map(fn ($chunk) => base_convert($chunk->join(''), 16, 10))
-                                ->mapWithKeys(fn ($char, $i) => ["bit_{$i}" => $char])
-                                ->toArray()
+                            array_combine(
+                                array_map(fn($i) => 'bit_' . $i, array_keys($encoded)),
+                                $encoded
+                            )
                         );
                 }
             });

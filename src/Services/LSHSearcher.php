@@ -27,31 +27,28 @@ class LSHSearcher
      * @param int $candidates
      * @param array $weights
      * @return \Illuminate\Database\Eloquent\Builder
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public function searchByQuery(string $query, Builder $builder, int $candidates = 100, array $weights = []): Builder
     {
-        $query = $this->encoder->encode([$query])[0];
-        $query = collect(str_split($query))
-            ->chunk(16)
-            ->map(fn ($chunk) => base_convert($chunk->join(''), 16, 10));
-
+        $query = collect($this->encoder->encodeArray([$query])[0]);
         return $this->searchByEncoded($query, $builder, $candidates, $weights);
     }
 
     /**
-     * @param array|\Illuminate\Database\Eloquent\Builder $query The encoded array for a search query.
+     * @param \Illuminate\Support\Collection $query The encoded array for a search query.
      * @param \Illuminate\Database\Eloquent\Builder $builder The builder that defines what we'll be searching
      * @param int $candidates
      * @param array $weights
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    public function searchByEncoded(Collection $query, Builder $builder, int $candidates = 250, array $weights = []): Builder
+    public function searchByEncoded(array $query, Builder $builder, int $candidates = 250, array $weights = []): Builder
     {
         // Create the query for the candidates
         $candidatesQuery = DB::table('lsh_search_index')
             ->select([
                 'id',
-                DB::raw($this->bitSimilarityQuery($query->take(4)) . ' * ' . $this->weightingQuery($weights) . ' AS score')
+                DB::raw($this->bitSimilarityQuery(array_slice($query, 0, 4)) . ' * ' . $this->weightingQuery($weights) . ' AS score')
             ])
             ->where('model_type', $builder->getModel()->getMorphClass())
             ->whereIn('model_id', $builder->select('id'))
@@ -124,18 +121,56 @@ class LSHSearcher
     }
 
     /**
+     * Get a single top result for each query.
+     *
+     * @param array $queries Query strings.
+     * @param float $threshold The threshold for similarity.
+     * @param array|null $models The models to search.
+     * @param array $weights Field weights to use for the search.
+     * @return array An array of models for each of the queries.
+     */
+    public function topResult(array $queries, float $threshold = 0.65, ?array $models = null, array $weights = []): array
+    {
+        $encoded = $this->encoder->encode(array_map(fn($q) => 'query: ' . $q, $queries));
+        $returnModels = [];
+        foreach($encoded as $i => $query) {
+            $subquery = DB::table('lsh_search_index')
+                ->select([
+                    'model_type', 'model_id', 'field',
+                    DB::raw($this->bitSimilarityQuery($query) . ' * ' . $this->weightingQuery($weights) . ' AS score')
+                ]);
+
+            $result = DB::table('lsh_search_index')
+                ->fromSub($subquery, 'sub')
+                ->groupBy('model_type', 'model_id')
+                ->selectRaw('`model_type`, `model_id`, SUM(`sub`.`score`) AS `score`')
+                ->orderByDesc('score')
+                ->having('score', '>', $threshold)
+                ->limit(1)
+                ->first();
+
+            $returnModels[] = !is_null($result) ? $result->model_type::find($result->model_id) : null;
+        }
+
+        return array_combine($queries, $returnModels);
+    }
+
+    /**
      * Builds the part of the query that represents bit similarity
      *
      * @param array $query
      * @return string
      */
-    private function bitSimilarityQuery(Collection $query): string
+    private function bitSimilarityQuery(array $query): string
     {
-        $similarity = $query
-            ->map(fn($bit, $i) => 'BIT_COUNT(`bit_' . (int) $i . '` ^ ' . $bit . ')')
-            ->join('+');
+        $similarity = [];
+        foreach($query as $i => $bit) {
+            $similarity[] = 'BIT_COUNT(`bit_' . $i . '` ^ ' . $bit . ')';
+        }
 
-        return '0.5 - ((' . $similarity . ') / ' . ($query->count() * 64) . ')';
+        $similarity = implode(' + ', $similarity);
+
+        return '0.5 - ((' . $similarity . ') / ' . (count($query) * 64) . ')';
     }
 
     /**

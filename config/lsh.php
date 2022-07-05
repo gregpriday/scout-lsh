@@ -7,5 +7,10 @@ return [
     'query' => [
         'cache_duration' => 43200,
         'cache_key' => 'lsh-search:query',
+    ],
+    'autolink' => [
+        'models' => null,
+        'threshold' => 0.65,
+        'weights' => ['title' => 1, 'content' => 0.5],
     ]
 ];

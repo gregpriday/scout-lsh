@@ -4,6 +4,7 @@ namespace SiteOrigin\ScoutLSH\Tests\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Str;
 use Laravel\Scout\Builder;
 use Laravel\Scout\Searchable;
 use SiteOrigin\ScoutLSH\Models\FieldWeights;
@@ -41,5 +42,10 @@ class Question extends Model implements FieldWeights
             'question' => 1.0,
             'answer' => 0.5,
         ];
+    }
+
+    public function getUrlAttribute(): string
+    {
+        return url('/questions/' . Str::slug($this->question));
     }
 }

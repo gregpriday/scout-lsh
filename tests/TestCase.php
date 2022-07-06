@@ -51,4 +51,12 @@ class TestCase extends Orchestra
         // Create a random string of $length with hex characters
         return strtoupper(bin2hex(random_bytes($length / 2)));
     }
+
+    protected function randomHashArray(int $length = 256): array
+    {
+        return array_map(
+            fn ($c) => base_convert(implode('', $c), 16, 10),
+            array_chunk(str_split($this->randomHashString($length)), 16)
+        );
+    }
 }

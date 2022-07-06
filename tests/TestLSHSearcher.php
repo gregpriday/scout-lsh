@@ -13,12 +13,12 @@ class TestLSHSearcher extends TestCase
 
     public function test_progressive_searching()
     {
-        $questionCount = 500;
+        $questionCount = 100;
 
         $toReturn = collect(range(0, $questionCount - 1))
             ->map(fn () => [
-                'question' => $this->randomHashString(),
-                'answer' => $this->randomHashString(),
+                'question' => $this->randomHashArray(),
+                'answer' => $this->randomHashArray(),
             ]);
 
         TextEncoder::shouldReceive('encode')
@@ -32,14 +32,12 @@ class TestLSHSearcher extends TestCase
 
         TextEncoder::shouldReceive('encode')
             ->once()
-            ->andReturn([0 => $this->randomHashString()]);
+            ->andReturn([0 => $this->randomHashArray()]);
 
         $query = $searcher->searchByQuery('random search query', Question::query(), 250)->limit(10);
 
         $start = microtime(true);
         $results = $query->get();
         $end = microtime(true);
-
-        dd($end - $start);
     }
 }

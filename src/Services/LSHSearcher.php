@@ -30,7 +30,7 @@ class LSHSearcher
      */
     public function searchByQuery(string $query, Builder $builder, int $candidates = 100, array $weights = []): Builder
     {
-        $query = collect($this->encoder->encodeArray([$query])[0]);
+        $query = $this->encoder->encode([$query])[0];
 
         return $this->searchByEncoded($query, $builder, $candidates, $weights);
     }

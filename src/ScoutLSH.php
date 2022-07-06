@@ -3,7 +3,6 @@
 namespace SiteOrigin\ScoutLSH;
 
 use ArrayIterator;
-use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\LazyCollection;
 use Laravel\Scout\Builder;
@@ -95,11 +94,6 @@ class ScoutLSH extends Engine implements PaginatesEloquentModels
     {
         // Get the search query
         $query = $builder->query;
-        $query = Cache::remember(
-            config('lsh.query.cache_key') . "[{$query}]",
-            now()->addMinutes(config('lsh.query.cache_duration')),
-            fn () => TextEncoder::encode(['query: ' . strtolower($query)])[0]
-        );
         $model = $builder->model;
 
         // Check if we're searching inside another query
@@ -109,9 +103,13 @@ class ScoutLSH extends Engine implements PaginatesEloquentModels
             $indexQuery = $model::query();
         }
 
-        $weights = method_exists($model, 'getSearchWeights') ? $model->getSearchWeights() : [];
+        $weights = match (true) {
+            ! empty($builder->fieldWeights) => $builder->fieldWeights,
+            method_exists($model, 'getSearchWeights') => $model->getSearchWeights(),
+            default => [],
+        };
 
-        return LSHSearcher::searchByEncoded($query, $indexQuery, config('lsh.search_candidates'), $weights);
+        return LSHSearcher::searchByQuery($query, $indexQuery, config('lsh.search_candidates'), $weights);
     }
 
     public function mapIds($results)

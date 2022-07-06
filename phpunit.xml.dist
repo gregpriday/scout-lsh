@@ -19,8 +19,8 @@
     verbose="true"
 >
     <testsuites>
-        <testsuite name="SiteOrigin Test Suite">
-            <directory>tests</directory>
+        <testsuite name="LSH Test Suite">
+            <directory prefix="Test" suffix=".php">./tests/Unit/</directory>
         </testsuite>
     </testsuites>
     <coverage>

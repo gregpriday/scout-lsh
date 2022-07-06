@@ -30,4 +30,12 @@ class Listing extends Model implements FieldWeights
             'description' => 1,
         ];
     }
+
+    public function getSimilarWeights(Builder $builder = null): array
+    {
+        return [
+            'title' => 1,
+            'description' => 1,
+        ];
+    }
 }

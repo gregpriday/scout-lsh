@@ -1,6 +1,6 @@
 <?php
 
-namespace SiteOrigin\ScoutLSH\Tests;
+namespace SiteOrigin\ScoutLSH\Tests\Unit;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
@@ -8,6 +8,7 @@ use SiteOrigin\ScoutLSH\Facades\TextEncoder;
 use SiteOrigin\ScoutLSH\Tests\database\Seeders\RealEstateSeeder;
 use SiteOrigin\ScoutLSH\Tests\Models\Listing;
 use SiteOrigin\ScoutLSH\Tests\Models\Question;
+use SiteOrigin\ScoutLSH\Tests\TestCase;
 
 class TestIndexing extends TestCase
 {
@@ -19,8 +20,8 @@ class TestIndexing extends TestCase
 
         $toReturn = collect(range(0, $questionCount - 1))
             ->map(fn () => [
-                'question' => array_map(fn () => rand(0, 255), range(0, 95)),
-                'answer' => array_map(fn () => rand(0, 255), range(0, 95)),
+                'question' => $this->randomHashArray(),
+                'answer' => $this->randomHashArray(),
             ]);
 
         TextEncoder::shouldReceive('encode')
@@ -34,7 +35,7 @@ class TestIndexing extends TestCase
 
         TextEncoder::shouldReceive('encode')
             ->twice()
-            ->andReturn([0 => array_map(fn () => rand(0, 255), range(0, 95))]);
+            ->andReturn([0 => $this->randomHashArray()]);
 
         // Perform a search query and make sure we get some results
         $results = Question::search('random search query')->get();
@@ -52,12 +53,10 @@ class TestIndexing extends TestCase
         $this->seed(RealEstateSeeder::class);
 
         // The default search should not get this correct
-        $first = Listing::search("land")->get()->pluck('title')->first();
-        $this->assertStringStartsNotWith("Vacant Land", $first);
+        $fill = Listing::search("land")->get()->pluck('title')->toArray();
+        $weighted = Listing::search("land")->withFieldWeights(['title' => 1])->get()->pluck('title')->toArray();
 
-        // When we search only the title, then it should
-        $first = Listing::search("land")->withFieldWeights(['title' => 1])->get()->pluck('title')->first();
-        $this->assertStringStartsWith("Vacant Land", $first);
+        $this->assertNotEquals($fill, $weighted);
     }
 
     public function test_question_answering()

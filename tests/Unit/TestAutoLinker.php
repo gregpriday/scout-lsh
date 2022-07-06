@@ -1,10 +1,11 @@
 <?php
 
-namespace SiteOrigin\ScoutLSH\Tests;
+namespace SiteOrigin\ScoutLSH\Tests\Unit;
 
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use SiteOrigin\ScoutLSH\Services\AutoLinker;
 use SiteOrigin\ScoutLSH\Tests\Models\Question;
+use SiteOrigin\ScoutLSH\Tests\TestCase;
 
 class TestAutoLinker extends TestCase
 {

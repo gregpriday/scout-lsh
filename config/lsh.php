@@ -6,11 +6,11 @@ return [
     'search_candidates' => 500,
     'query' => [
         'cache_duration' => 43200,
-        'cache_key' => 'lsh-search:query',
+        'cache_key' => 'lsh-encoded-cache',
     ],
     'autolink' => [
-        'models' => null,
         'threshold' => 0.65,
+        'models' => null,
         'weights' => ['title' => 1, 'content' => 0.5],
     ]
 ];

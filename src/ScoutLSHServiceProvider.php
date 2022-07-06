@@ -2,7 +2,7 @@
 
 namespace SiteOrigin\ScoutLSH;
 
-use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Cache;
 use Laravel\Scout\Builder;
 use Laravel\Scout\EngineManager;
 use SiteOrigin\ScoutLSH\Services\AutoLinker;
@@ -37,9 +37,29 @@ class ScoutLSHServiceProvider extends PackageServiceProvider
             return new AutoLinker(app(LSHSearcher::class), app(TextEncoder::class));
         });
 
-        //Blade::directive('autolink', function($expression){
-        //
-        //});
+        Cache::remember('lsh.config', now()->addMinutes(5), function () {
+            return config('lsh.config');
+        });
+
+        Cache::macro('rememberMultiple', function (array $inputs, $ttl, callable $callback) {
+            $cacheKeys = array_keys($inputs);
+            $cacheValues = Cache::getMultiple($cacheKeys);
+
+            // Missing values are null
+            $missing = collect($cacheValues)
+                ->filter(fn ($value) => is_null($value))
+                ->mapWithKeys(fn ($value, $key) => [$key => $inputs[$key]])
+                ->toArray();
+
+            if (count($missing) > 0) {
+                $new = $callback($missing);
+                Cache::setMultiple($new, $ttl);
+
+                $cacheValues = array_merge($cacheValues, $new);
+            }
+
+            return $cacheValues;
+        });
     }
 
     public function configurePackage(Package $package): void

@@ -3,6 +3,7 @@
 namespace SiteOrigin\ScoutLSH\Services;
 
 use GuzzleHttp\Client;
+use Illuminate\Support\Facades\Cache;
 
 class TextEncoder
 {
@@ -13,25 +14,35 @@ class TextEncoder
         ]);
     }
 
-    public function encode(array $texts): array
+    public function encode(array $texts, bool $cache = false): array
     {
-        return array_map(
+        if ($cache) {
+            $inputs = collect($texts)
+                ->mapWithKeys(fn ($t) => [config('lsh.query.cache_key').'::'.md5($t) => $t])->toArray();
+
+            // First try get all the texts from the cache.
+            $encoded = Cache::rememberMultiple($inputs, null, function ($inputs) {
+                return $this->encodeTexts($inputs);
+            });
+        } else {
+            $encoded = $this->encodeTexts($texts);
+        }
+
+        return array_values(array_map(
             fn ($e) => array_map(
                 fn ($c) => base_convert(implode('', $c), 16, 10),
                 array_chunk(str_split($e), 16)
             ),
-            $this->encodeTexts($texts)
-        );
+            $encoded
+        ));
     }
 
     /**
      * @param array $texts
      * @return array
      * @throws \GuzzleHttp\Exception\GuzzleException
-     *
-     * @todo Add caching so we don't destroy the endpoint.
      */
-    private function encodeTexts(array $texts): array
+    protected function encodeTexts(array $texts): array
     {
         $keys = array_keys($texts);
 

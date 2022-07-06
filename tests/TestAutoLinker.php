@@ -59,9 +59,7 @@ class TestAutoLinker extends TestCase
 
         $autoLinker = app(AutoLinker::class);
         $html = 'If you are lacking <a href="#search:finding a purpose in life">something</a> then you could consider getting a <a href="#search">computer science degree</a> or perhaps a pet <a href="#search">guinea pig</a>.';
-        $html = $autoLinker->autolink($html, [
-            0.65, [Question::class], ['question' => 1.0, 'answer' => 0.5],
-        ]);
+        $html = $autoLinker->autolink($html, [0.65, [Question::class], ['question' => 1.0, 'answer' => 0.5]]);
 
         // Check that the autolinked text is correct.
         $this->assertStringContainsString($purpose->url, $html);

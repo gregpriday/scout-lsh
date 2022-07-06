@@ -37,10 +37,6 @@ class ScoutLSHServiceProvider extends PackageServiceProvider
             return new AutoLinker(app(LSHSearcher::class), app(TextEncoder::class));
         });
 
-        Cache::remember('lsh.config', now()->addMinutes(5), function () {
-            return config('lsh.config');
-        });
-
         Cache::macro('rememberMultiple', function (array $inputs, $ttl, callable $callback) {
             $cacheKeys = array_keys($inputs);
             $cacheValues = Cache::getMultiple($cacheKeys);

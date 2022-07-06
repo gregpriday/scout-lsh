@@ -63,7 +63,9 @@
                 "SiteOrigin\\ScoutLSH\\ScoutLSHServiceProvider"
             ],
             "aliases": {
-                "ScoutLSH": "SiteOrigin\\ScoutLSH\\Facades\\ScoutLSH"
+                "AutoLinker": "SiteOrigin\\ScoutLSH\\Facades\\AutoLinker",
+                "LSHSearcher": "SiteOrigin\\ScoutLSH\\Facades\\LSHSearcher",
+                "TextEncoder": "SiteOrigin\\ScoutLSH\\Facades\\TextEncoder"
             }
         }
     },

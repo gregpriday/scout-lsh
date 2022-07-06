@@ -30,13 +30,13 @@ class LSHSearcher
      */
     public function searchByQuery(string $query, Builder $builder, int $candidates = 100, array $weights = []): Builder
     {
-        $query = $this->encoder->encode([$query])[0];
+        $query = $this->encoder->encode([$query], true)[0];
 
         return $this->searchByEncoded($query, $builder, $candidates, $weights);
     }
 
     /**
-     * @param \Illuminate\Support\Collection $query The encoded array for a search query.
+     * @param array $query The encoded array for a search query.
      * @param \Illuminate\Database\Eloquent\Builder $builder The builder that defines what we'll be searching
      * @param int $candidates
      * @param array $weights
@@ -72,7 +72,6 @@ class LSHSearcher
      *
      * @param $model
      * @param \Illuminate\Database\Eloquent\Builder $builder
-     * @param int $candidates
      * @param array $weights
      * @return \Illuminate\Database\Eloquent\Builder
      */
@@ -105,6 +104,13 @@ class LSHSearcher
         return $this->combineIntoEloquentQuery($resultsQuery, $builder);
     }
 
+    /**
+     * Combines the individual field queries into a single query that can be used to get the model results.
+     *
+     * @param \Illuminate\Database\Query\Builder $results
+     * @param \Illuminate\Database\Eloquent\Builder $builder
+     * @return \Illuminate\Database\Eloquent\Model|\Illuminate\Database\Eloquent\Builder
+     */
     private function combineIntoEloquentQuery(QueryBuilder $results, Builder $builder): \Illuminate\Database\Eloquent\Model|Builder
     {
         $combinedQuery = DB::table('lsh_search_index')
@@ -128,6 +134,7 @@ class LSHSearcher
      * @param array|null $models The models to search.
      * @param array $weights Field weights to use for the search.
      * @return array An array of models for each of the queries.
+     * @throws \GuzzleHttp\Exception\GuzzleException
      */
     public function topResult(array $queries, float $threshold = 0.65, ?array $models = null, array $weights = []): array
     {
@@ -191,6 +198,13 @@ class LSHSearcher
         return '0.5 - ((' . implode(' + ', $similarity) . ') / ' . ($take * 32) . ')';
     }
 
+    /**
+     * Builds the part of the query that represents weighting.
+     *
+     * @param array $weights
+     * @param string|null $table
+     * @return string
+     */
     private function weightingQuery(array $weights, string $table = null): string
     {
         if (! empty($weights)) {

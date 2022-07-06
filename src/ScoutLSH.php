@@ -12,6 +12,9 @@ use Laravel\Scout\Engines\Engine;
 use SiteOrigin\ScoutLSH\Facades\LSHSearcher;
 use SiteOrigin\ScoutLSH\Facades\TextEncoder;
 
+/**
+ * Laravel Scout engine for LSH.
+ */
 class ScoutLSH extends Engine implements PaginatesEloquentModels
 {
     public function update($models)

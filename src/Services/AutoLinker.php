@@ -29,6 +29,14 @@ class AutoLinker
         $this->config = $config;
     }
 
+    /**
+     * Given some HTML, automatically link to related content using LSH.
+     *
+     * @param string $html
+     * @param array|null $config
+     * @return string
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
     public function autolink(string $html, array $config = null): string
     {
         // Find all the links in the HTML

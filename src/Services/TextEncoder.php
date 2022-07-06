@@ -14,14 +14,22 @@ class TextEncoder
         ]);
     }
 
-    public function encode(array $texts, bool $cache = false): array
+    /**
+     * Encode texts into arrays for Hamming distance comparison.
+     *
+     * @param array $texts
+     * @param bool $cache
+     * @return array
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     */
+    public function encode(array $texts, int|bool $cache = false): array
     {
         if ($cache) {
             $inputs = collect($texts)
                 ->mapWithKeys(fn ($t) => [config('lsh.query.cache_key').'::'.md5($t) => $t])->toArray();
 
             // First try get all the texts from the cache.
-            $encoded = Cache::rememberMultiple($inputs, null, function ($inputs) {
+            $encoded = Cache::rememberMultiple($inputs, is_int($cache) ? $cache : null, function ($inputs) {
                 return $this->encodeTexts($inputs);
             });
         } else {
@@ -38,6 +46,8 @@ class TextEncoder
     }
 
     /**
+     * Perform server requests to encode the actual texts.
+     *
      * @param array $texts
      * @return array
      * @throws \GuzzleHttp\Exception\GuzzleException

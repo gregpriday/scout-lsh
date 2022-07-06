@@ -97,7 +97,7 @@ class ScoutLSH extends Engine implements PaginatesEloquentModels
         $model = $builder->model;
 
         // Check if we're searching inside another query
-        if (! empty($builder->index) && $builder->index instanceof \Illuminate\Database\Eloquent\Builder) {
+        if (! empty($builder->index) and $builder->index instanceof \Illuminate\Database\Eloquent\Builder) {
             $indexQuery = $builder->index;
         } else {
             $indexQuery = $model::query();

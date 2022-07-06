@@ -15,17 +15,11 @@ class AutoLinker
      */
     private LSHSearcher $searcher;
 
-    /**
-     * @var \SiteOrigin\ScoutLSH\Services\TextEncoder
-     */
-    private TextEncoder $encoder;
-
     private array $config;
 
-    public function __construct(LSHSearcher $searcher, TextEncoder $encoder, array $config = [])
+    public function __construct(LSHSearcher $searcher, array $config = [])
     {
         $this->searcher = $searcher;
-        $this->encoder = $encoder;
         $this->config = $config;
     }
 

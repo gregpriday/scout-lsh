@@ -7,6 +7,11 @@ use Illuminate\Support\Facades\Cache;
 
 class TextEncoder
 {
+    /**
+     * @var \GuzzleHttp\Client
+     */
+    private Client $client;
+
     public function __construct(string $endpoint)
     {
         $this->client = new Client([
